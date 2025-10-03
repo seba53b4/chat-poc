@@ -1,26 +1,35 @@
-import { MessageSchema } from "../domain/message.js";
+import { RoomMessageCreateSchema } from "../domain/message.js";
 import { insertMessage, getRecentMessages } from "../dao/messageDAO.js";
 
 export async function listMessages(req, res, next) {
   try {
+    const roomCode = req.query.roomCode;
+    if (!roomCode || typeof roomCode !== "string") {
+      return res.status(400).json({ error: "roomCode query param is required" });
+    }
+
     const limit = Number(req.query.limit || 50);
     const beforeId = req.query.beforeId ? Number(req.query.beforeId) : undefined;
-    const rows = await getRecentMessages(limit, beforeId);
-    res.json(rows);
+    const rows = await getRecentMessages(roomCode, limit, beforeId);
+    return res.json(rows);
   } catch (e) {
-    next(e);
+    if (e instanceof Error && e.message === "Room not found") {
+      return res.status(404).json({ error: "Room not found" });
+    }
+    return next(e);
   }
 }
 
 export async function createMessage(req, res, next) {
   try {
-    const parsed = MessageSchema.pick({ userId: true, content: true }).parse(
-      req.body
-    );
+    const parsed = RoomMessageCreateSchema.parse(req.body);
     const saved = await insertMessage(parsed);
-    res.status(201).json(saved);
+    return res.status(201).json(saved);
   } catch (e) {
-    next(e);
+    if (e instanceof Error && e.message === "Room not found") {
+      return res.status(404).json({ error: "Room not found" });
+    }
+    return next(e);
   }
 }
 

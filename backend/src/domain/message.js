@@ -1,10 +1,18 @@
 import { z } from "zod";
 
-export const MessageSchema = z.object({
+export const RoomMessageSchema = z.object({
   id: z.number().int().positive().optional(),
-  userId: z.string().min(1).max(64),
+  roomId: z.number().int().positive().optional(),
+  roomCode: z.string().min(3).max(12),
+  sender: z.string().min(1).max(64),
   content: z.string().min(1).max(5000),
-  createdAt: z.date().optional(),
+  createdAt: z.coerce.date().optional(),
 });
 
-export default MessageSchema;
+export const RoomMessageCreateSchema = RoomMessageSchema.pick({
+  roomCode: true,
+  sender: true,
+  content: true,
+});
+
+export default RoomMessageSchema;
